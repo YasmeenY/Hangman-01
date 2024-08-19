@@ -1,16 +1,18 @@
 import pygame
 import math
-import random
 import requests
 import json
 import os
 
 GREY = (192, 192, 192)
+BLACK = (0, 0, 0)
 WIDTH, HEIGHT = 900, 720
 FPS = 60
 radius = 25
 space = 20
 incorrect = 0
+win_count = 0
+loss_count = 0
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -86,6 +88,8 @@ def draw():
             screen.blit(txt, (x - txt.get_width() / 2, y - txt.get_height() / 2))
     
     draw_hangman(incorrect)
+    stats_text = WORD.render(f"Wins: {win_count}   Losses: {loss_count}", True, BLACK)
+    screen.blit(stats_text, (10, 10))
     pygame.display.update()
 
 # Game loop
@@ -107,7 +111,7 @@ while run:
                     if dist <= radius:
                         letter[3] = False
                         guessed.append(ltr)
-                        print(f"Guessed letter: {ltr}, Word: {word}")  # Debug print
+                        print(f"Guessed letter: {ltr}, Word: {word}")
                         if ltr not in word:
                             incorrect += 1
 
@@ -117,11 +121,11 @@ while run:
         draw()
         pygame.time.delay(1000)
         screen.fill((0, 0, 0))
-        text = WORD.render("YOU WON", 1, (129, 255, 0))
+        text = WORD.render("YOU WON", 1, (170, 270, 0))
         screen.blit(text, (WIDTH / 2 - text.get_width() / 2, HEIGHT / 2 - text.get_height() / 2))
         pygame.display.update()
         pygame.time.delay(4000)
-        print("WON")
+        win_count += 1
         break
 
     if incorrect >= 8:
@@ -129,12 +133,12 @@ while run:
         pygame.time.delay(1000)
         screen.fill((0, 0, 0))
         text = WORD.render("YOU LOST", 1, (255, 0, 0))
-        answer = WORD.render("The answer is " + word, 1, (129, 255, 0))
+        answer = WORD.render("The answer is " + word, 1, (170, 270, 0))
         screen.blit(text, (WIDTH / 2 - text.get_width() / 2, HEIGHT / 2 - text.get_height() / 2))
         screen.blit(answer, (WIDTH / 2 - answer.get_width() / 2, HEIGHT / 2 - text.get_height() / 2 + 70))
         pygame.display.update()
         pygame.time.delay(4000)
-        print("LOST")
+        loss_count += 1
         break
 
 pygame.quit()
