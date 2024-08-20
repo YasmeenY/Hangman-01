@@ -1,11 +1,11 @@
 import pygame
 import math
 import requests
-import json
-import os
+
 
 GREY = (192, 192, 192)
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 WIDTH, HEIGHT = 900, 720
 FPS = 60
 radius = 25
@@ -18,26 +18,36 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hangman")
 clock = pygame.time.Clock()
-
-# Fetch word
-try:
-    words = requests.get("https://random-word-api.herokuapp.com/word").json()
-    word = words[0].upper() if words else "PYTHON"
-except Exception as e:
-    print("Error fetching word:", e)
-    word = "PYTHON"
-
-guessed = []
-letters = []
 x_start = round((WIDTH - (radius * 2 + space) * 13) / 2)
 y_start = 540
 
-# Create letter buttons
-A = 65
-for i in range(26):
-    x = x_start + space * 2 + ((radius * 2 + space) * (i % 13))
-    y = y_start + ((i // 13) * (space + radius * 2))
-    letters.append([x, y, chr(A + i), True])
+# Fetch word
+def get_word():
+    try:
+        response = requests.get("https://random-word-api.herokuapp.com/word")
+        if response.status_code == 200:
+            words = response.json()
+            if words:
+                return words[0].upper()
+    except Exception as e:
+        print("Error fetching word:", e)
+    return "HANGMAN"
+
+def reset_game():
+    global word, guessed, incorrect, letters, game_over, game_result
+    word = get_word()
+    guessed = []
+    incorrect = 0
+    letters = []
+    A = 65
+    for i in range(26):
+        x = x_start + space * 2 + ((radius * 2 + space) * (i % 13))
+        y = y_start + ((i // 13) * (space + radius * 2))
+        letters.append([x, y, chr(A + i), True])
+    game_over = False
+    game_result = ""
+
+reset_game()
 
 # Fonts
 font = pygame.font.SysFont("8-Bit-Madness", 45)
@@ -64,10 +74,9 @@ def draw_hangman(count):
     if count > 7:
         pygame.draw.line(screen, GREY, (300, 380), (260, 450), 10)
 
-# Draw function
 def draw():
-    screen.fill((255, 255, 255))
-    title = TITLE.render("Hangman", 1, (0, 0, 0))
+    screen.fill(WHITE)
+    title = TITLE.render("Hangman", 1, BLACK)
     screen.blit(title, (WIDTH / 1.9 - title.get_width() / 2, 10))
     
     disp_word = ""
@@ -77,19 +86,28 @@ def draw():
         else:
             disp_word += "_ "
     
-    text = WORD.render(disp_word, 1, (0, 0, 0))
+    text = WORD.render(disp_word, 1, BLACK)
     screen.blit(text, (500, 250))
     
     for btn_pos in letters:
         x, y, ltr, visible = btn_pos
         if visible:
-            pygame.draw.circle(screen, (0, 0, 0), (x, y), radius, 4)
-            txt = font.render(ltr, 1, (0, 0, 0))
+            pygame.draw.circle(screen, BLACK, (x, y), radius, 4)
+            txt = font.render(ltr, 1, BLACK)
             screen.blit(txt, (x - txt.get_width() / 2, y - txt.get_height() / 2))
     
     draw_hangman(incorrect)
     stats_text = WORD.render(f"Wins: {win_count}   Losses: {loss_count}", True, BLACK)
     screen.blit(stats_text, (10, 10))
+
+    if game_over:
+        continue_button = pygame.draw.rect(screen, (0,255,0), (WIDTH / 2 - 100, HEIGHT / 2 + 50, 200, 50))
+        continue_txt = WORD.render("Continue ?", True, BLACK)
+        screen.blit(continue_txt, (WIDTH / 2 - continue_txt.get_width() / 2, HEIGHT / 2 + 50, 200, 10))
+
+        result_text = WORD.render(game_result, True, BLACK)
+        screen.blit(result_text, (WIDTH / 2 - result_text.get_width() / 2, HEIGHT / 2 + 120))
+
     pygame.display.update()
 
 # Game loop
@@ -104,8 +122,14 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             x_mouse, y_mouse = pygame.mouse.get_pos()
+            if game_over:
+                if (WIDTH / 2 - 100 <= x_mouse <= WIDTH / 2 + 100 and HEIGHT / 2 + 50 <= y_mouse <= HEIGHT / 2 + 100):
+                    reset_game()
+                    continue
+
             for letter in letters:
                 x, y, ltr, visible = letter
+
                 if visible:
                     dist = math.sqrt((x - x_mouse) ** 2 + (y - y_mouse) ** 2)
                     if dist <= radius:
@@ -117,28 +141,16 @@ while run:
 
     # Check for win or loss
     won = all(letter in guessed for letter in word)
-    if won:
-        draw()
-        pygame.time.delay(1000)
-        screen.fill((0, 0, 0))
-        text = WORD.render("YOU WON", 1, (170, 270, 0))
-        screen.blit(text, (WIDTH / 2 - text.get_width() / 2, HEIGHT / 2 - text.get_height() / 2))
-        pygame.display.update()
-        pygame.time.delay(4000)
+    if won and not game_over:
+        game_result = "YOU WON"
         win_count += 1
-        break
+        game_over = True
+        continue
 
-    if incorrect >= 8:
-        draw()
-        pygame.time.delay(1000)
-        screen.fill((0, 0, 0))
-        text = WORD.render("YOU LOST", 1, (255, 0, 0))
-        answer = WORD.render("The answer is " + word, 1, (170, 270, 0))
-        screen.blit(text, (WIDTH / 2 - text.get_width() / 2, HEIGHT / 2 - text.get_height() / 2))
-        screen.blit(answer, (WIDTH / 2 - answer.get_width() / 2, HEIGHT / 2 - text.get_height() / 2 + 70))
-        pygame.display.update()
-        pygame.time.delay(4000)
+    if incorrect >= 8 and not game_over:
+        game_result = f"YOU LOST, The answer was {word}"
         loss_count += 1
-        break
+        game_over = True
+        continue
 
 pygame.quit()
