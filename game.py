@@ -58,11 +58,17 @@ TITLE = pygame.font.SysFont("8-Bit-Madness", 70)
 def draw_hangman(count):
     if count > 0:
         pygame.draw.circle(screen, REDDISH, (150, 180), 50, 10)
-    if count > 1:
-        pygame.draw.circle(screen, REDDISH, (170, 165), 10)
+    if count > 1 and count <= 7:
+        pygame.draw.circle(screen, REDDISH, (130, 165), 10)
         pygame.draw.circle(screen, REDDISH, (170, 165), 10)
     if count > 2:
-        pygame.draw.arc(screen, REDDISH, (120, 170, 60, 40), math.pi, 2 * math.pi, 4)
+        if incorrect == 3:
+            pygame.draw.arc(screen, REDDISH, (120, 170, 60, 40), math.pi, 2 * math.pi, 4)
+        if incorrect == 4:
+            pygame.draw.arc(screen, REDDISH, (120, 180, 60, 20), math.pi, 2 * math.pi, 4)
+        if incorrect >= 5 and count <= 7:
+            pygame.draw.arc(screen, REDDISH, (120, 180, 60, 20), 2 *math.pi,  math.pi, 4)
+
     if count > 3:
         pygame.draw.line(screen, REDDISH, (150, 230), (150, 380), 10)
     if count > 4:
@@ -73,6 +79,23 @@ def draw_hangman(count):
         pygame.draw.line(screen, REDDISH, (150, 380), (190, 450), 10)
     if count > 7:
         pygame.draw.line(screen, REDDISH, (150, 380), (110, 450), 10)
+    if count >= 8:
+        #left eye end
+        pygame.draw.line(screen, REDDISH, (120, 160), (140, 180), 4)
+        pygame.draw.line(screen, REDDISH, (120, 180), (140, 160), 4)
+        #right eye end
+        pygame.draw.line(screen, REDDISH, (160, 160), (180, 180), 4)
+        pygame.draw.line(screen, REDDISH, (160, 180), (180, 160), 4)
+        # mouth end
+        pygame.draw.line(screen, REDDISH, (130, 200), (170, 200), 4)
+        pygame.draw.arc(screen, REDDISH, (128, 230, 40, 10), 0, 2 * math.pi, 10)  # Noose
+
+#draw gallows
+def draw_gallows():
+    pygame.draw.line(screen, REDDISH, (50, 500), (50, 120), 10)  # Post
+    # Horizontal beam
+    pygame.draw.line(screen, REDDISH, (50, 120), (160, 100), 10)  # Beam
+    pygame.draw.line(screen, REDDISH, (155, 100), (155, 140), 10)  # Noose rope
 
 # Improved Button Design and Hover Effects
 def draw_buttons():
@@ -99,6 +122,7 @@ def draw_gradient_background():
 
 def draw():
     draw_gradient_background()
+    screen.fill((204, 153, 255))
     title = TITLE.render("Hangman", True, BLACK)
     screen.blit(title, (WIDTH / 2 - title.get_width() / 2, 10))
     
@@ -119,6 +143,7 @@ def draw():
             txt = font.render(ltr, True, BLACK)
             screen.blit(txt, (x - txt.get_width() / 2, y - txt.get_height() / 2))
     
+    draw_gallows()
     draw_hangman(incorrect)
     stats_text = WORD.render(f"Wins: {win_count}   Losses: {loss_count}", True, BLACK)
     screen.blit(stats_text, (10, 10))
