@@ -3,7 +3,7 @@ import math
 import requests
 
 
-GREY = (192, 192, 192)
+REDDISH = (216, 112, 147)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 WIDTH, HEIGHT = 900, 720
@@ -57,27 +57,50 @@ TITLE = pygame.font.SysFont("8-Bit-Madness", 70)
 # Draw Hangman function
 def draw_hangman(count):
     if count > 0:
-        pygame.draw.circle(screen, GREY, (300, 180), 50, 10)
+        pygame.draw.circle(screen, REDDISH, (150, 180), 50, 10)
     if count > 1:
-        pygame.draw.circle(screen, GREY, (280, 165), 10)
-        pygame.draw.circle(screen, GREY, (320, 165), 10)
+        pygame.draw.circle(screen, REDDISH, (170, 165), 10)
+        pygame.draw.circle(screen, REDDISH, (170, 165), 10)
     if count > 2:
-        pygame.draw.arc(screen, GREY, (270, 170, 60, 40), math.pi, 2 * math.pi, 4)
+        pygame.draw.arc(screen, REDDISH, (120, 170, 60, 40), math.pi, 2 * math.pi, 4)
     if count > 3:
-        pygame.draw.line(screen, GREY, (300, 230), (300, 380), 10)
+        pygame.draw.line(screen, REDDISH, (150, 230), (150, 380), 10)
     if count > 4:
-        pygame.draw.line(screen, GREY, (300, 270), (380, 230), 10)
+        pygame.draw.line(screen, REDDISH, (150, 270), (230, 230), 10)
     if count > 5:
-        pygame.draw.line(screen, GREY, (300, 270), (220, 230), 10)
+        pygame.draw.line(screen, REDDISH, (150, 270), (70, 230), 10)
     if count > 6:
-        pygame.draw.line(screen, GREY, (300, 380), (340, 450), 10)
+        pygame.draw.line(screen, REDDISH, (150, 380), (190, 450), 10)
     if count > 7:
-        pygame.draw.line(screen, GREY, (300, 380), (260, 450), 10)
+        pygame.draw.line(screen, REDDISH, (150, 380), (110, 450), 10)
+
+# Improved Button Design and Hover Effects
+def draw_buttons():
+    continue_button = pygame.Rect(WIDTH / 2 - 100, HEIGHT / 2 + 50, 200, 50)
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    if continue_button.collidepoint(mouse_x, mouse_y):
+        pygame.draw.rect(screen, (0, 200, 0), continue_button, border_radius=25)  # Hover color
+    else:
+        pygame.draw.rect(screen, (0, 255, 0), continue_button, border_radius=25)  # Normal color
+
+    continue_txt = WORD.render("Continue", True, BLACK)
+    screen.blit(continue_txt, (WIDTH / 2 - continue_txt.get_width() / 2, HEIGHT / 2 + 60))
+
+#adding gradient background blue to black
+def draw_gradient_background():
+    start_color = (230, 230, 250)  # Lavender
+    end_color = (204, 153, 255)    # Light Purple
+    for i in range(HEIGHT):
+        r = int(start_color[0] * (1 - i / HEIGHT) + end_color[0] * (i / HEIGHT))
+        g = int(start_color[1] * (1 - i / HEIGHT) + end_color[1] * (i / HEIGHT))
+        b = int(start_color[2] * (1 - i / HEIGHT) + end_color[2] * (i / HEIGHT))
+        color = (r, g, b)
+        pygame.draw.line(screen, color, (0, i), (WIDTH, i))
 
 def draw():
-    screen.fill(WHITE)
-    title = TITLE.render("Hangman", 1, BLACK)
-    screen.blit(title, (WIDTH / 1.9 - title.get_width() / 2, 10))
+    draw_gradient_background()
+    title = TITLE.render("Hangman", True, BLACK)
+    screen.blit(title, (WIDTH / 2 - title.get_width() / 2, 10))
     
     disp_word = ""
     for ltr in word:
@@ -86,14 +109,14 @@ def draw():
         else:
             disp_word += "_ "
     
-    text = WORD.render(disp_word, 1, BLACK)
+    text = WORD.render(disp_word, True, BLACK)
     screen.blit(text, (500, 250))
     
     for btn_pos in letters:
         x, y, ltr, visible = btn_pos
         if visible:
             pygame.draw.circle(screen, BLACK, (x, y), radius, 4)
-            txt = font.render(ltr, 1, BLACK)
+            txt = font.render(ltr, True, BLACK)
             screen.blit(txt, (x - txt.get_width() / 2, y - txt.get_height() / 2))
     
     draw_hangman(incorrect)
@@ -101,10 +124,7 @@ def draw():
     screen.blit(stats_text, (10, 10))
 
     if game_over:
-        continue_button = pygame.draw.rect(screen, (0,255,0), (WIDTH / 2 - 100, HEIGHT / 2 + 50, 200, 50))
-        continue_txt = WORD.render("Continue ?", True, BLACK)
-        screen.blit(continue_txt, (WIDTH / 2 - continue_txt.get_width() / 2, HEIGHT / 2 + 50, 200, 10))
-
+        draw_buttons()
         result_text = WORD.render(game_result, True, BLACK)
         screen.blit(result_text, (WIDTH / 2 - result_text.get_width() / 2, HEIGHT / 2 + 120))
 
