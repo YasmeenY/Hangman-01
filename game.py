@@ -47,8 +47,8 @@ class HangmanGame:
             pygame.quit()
             sys.exit()
 
-        self.font = pygame.font.Font(self.font_path, 45)
-        self.WORD = pygame.font.Font(self.font_path, 40)
+        self.font = pygame.font.Font(self.font_path, 40)
+        self.WORD = pygame.font.Font(self.font_path, 35)
         self.TITLE = pygame.font.Font(self.font_path, 70)
 
     def resize_screen(self, new_width, new_height):
@@ -193,7 +193,6 @@ class HangmanGame:
         # Draw letter buttons
         for x, y, ltr, visible in self.letters:
             if visible:
-                pygame.draw.circle(self.screen, self.BLACK, (x, y), self.radius, 4)
                 txt = self.font.render(ltr, True, self.BLACK)
                 txt_rect = txt.get_rect(center=(x, y))
                 self.screen.blit(txt, txt_rect)
