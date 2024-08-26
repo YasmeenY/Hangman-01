@@ -2,6 +2,7 @@ import pygame
 import math
 import requests
 import sys
+import os
 
 
 REDDISH = (216, 112, 147)
@@ -38,15 +39,22 @@ class HangmanGame:
         self.reset_game()
 
         # Fonts
-        self.font = pygame.font.SysFont("Chalkduster.ttf", 45)
-        self.WORD = pygame.font.SysFont("Chalkduster.ttf", 40)
-        self.TITLE = pygame.font.SysFont("Chalkduster.ttf", 70)
+        self.font_path = './Font/FrederickatheGreat-Regular.ttf' 
+
+        # Check if the font file exists
+        if not os.path.isfile(self.font_path):
+            print(f"Error: Font file not found at path: {self.font_path}")
+            pygame.quit()
+            sys.exit()
+
+        self.font = pygame.font.Font(self.font_path, 45)
+        self.WORD = pygame.font.Font(self.font_path, 40)
+        self.TITLE = pygame.font.Font(self.font_path, 70)
 
     def resize_screen(self, new_width, new_height):
         self.WIDTH, self.HEIGHT = new_width, new_height
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT), pygame.RESIZABLE)
         
-        # Recalculate positions and spacing
         self.x_start = (self.WIDTH - (self.radius * 2 + self.space) * 13) // 2
         self.y_start = self.HEIGHT - (self.radius * 2 + self.space) * 2 - 100
         
@@ -82,9 +90,8 @@ class HangmanGame:
         self.letters = []
         A = 65
         
-        # Recalculate positions of letter buttons
         self.x_start = round((self.WIDTH - (self.radius * 2 + self.space) * 13) / 2)
-        self.y_start = self.HEIGHT - (self.radius * 2 + self.space) * 2 - 100  # Adjust vertical position if needed
+        self.y_start = self.HEIGHT - (self.radius * 2 + self.space) * 2 - 100  
         
         for i in range(26):
             x = self.x_start + self.space * 2 + ((self.radius * 2 + self.space) * (i % 13))
@@ -94,51 +101,47 @@ class HangmanGame:
         self.game_over = False
         self.game_result = ""
 
-        # Recalculate button positions
         self.continue_button_rect = pygame.Rect(
             self.WIDTH / 2 - self.button_width / 2,
-            self.HEIGHT - self.button_height - 30,  # Adjust vertical position if needed
+            self.HEIGHT - self.button_height - 30, 
             self.button_width,
             self.button_height
         )
 
     # Draw Hangman function
     def draw_hangman(self, count):
-        # Drawing hangman based on the count of incorrect guesses
-        if count > 0:
-            pygame.draw.circle(self.screen, self.REDDISH, (150, 180), 50, 10)
-        if count > 1 and count <= 7:
-            pygame.draw.circle(self.screen, self.REDDISH, (130, 165), 10)
-            pygame.draw.circle(self.screen, self.REDDISH, (170, 165), 10)
-        if count > 2:
-            if self.incorrect == 3:
-                pygame.draw.arc(self.screen, self.REDDISH, (120, 170, 60, 40), math.pi, 2 * math.pi, 4)
-            if self.incorrect == 4:
-                pygame.draw.arc(self.screen, self.REDDISH, (120, 180, 60, 20), math.pi, 2 * math.pi, 4)
-            if self.incorrect >= 5 and count <= 7:
-                pygame.draw.arc(self.screen, self.REDDISH, (120, 180, 60, 20), 2 *math.pi,  math.pi, 4)
+        base_x, base_y = 150, 180
+        shadow_offset = 5
+        
+        hangman_parts = [
+            {'type': 'head', 'pos': (base_x, base_y), 'size': 50, 'color': self.REDDISH, 'outline': 10},
+            {'type': 'eyes', 'pos': (base_x - 20, base_y - 15), 'size': 10, 'color': self.REDDISH, 'outline': 4},
+            {'type': 'eyes', 'pos': (base_x + 20, base_y - 15), 'size': 10, 'color': self.REDDISH, 'outline': 4},
+            {'type': 'body', 'start': (base_x, base_y + 50), 'end': (base_x, base_y + 150), 'width': 10, 'color': self.REDDISH},
+            {'type': 'arm_left', 'start': (base_x, base_y + 75), 'end': (base_x - 60, base_y + 60), 'width': 10, 'color': self.REDDISH},
+            {'type': 'arm_right', 'start': (base_x, base_y + 75), 'end': (base_x + 60, base_y + 60), 'width': 10, 'color': self.REDDISH},
+            {'type': 'leg_left', 'start': (base_x, base_y + 150), 'end': (base_x - 40, base_y + 220), 'width': 10, 'color': self.REDDISH},
+            {'type': 'leg_right', 'start': (base_x, base_y + 150), 'end': (base_x + 40, base_y + 220), 'width': 10, 'color': self.REDDISH},
+            {'type': 'mouth', 'start': (base_x - 20, base_y + 10), 'end': (base_x + 20, base_y + 10), 'width': 4, 'color': self.REDDISH}
+        ]
+        
+        for i, part in enumerate(hangman_parts):
+            if count > i:
+                if part['type'] == 'head':
+                    pygame.draw.circle(self.screen, (100, 100, 100), (part['pos'][0] + shadow_offset, part['pos'][1] + shadow_offset), part['size'], part['outline'])  # Shadow
+                    pygame.draw.circle(self.screen, part['color'], part['pos'], part['size'], part['outline'])  # Head
+                elif part['type'] == 'eyes':
+                    pygame.draw.circle(self.screen, (100, 100, 100), (part['pos'][0] + shadow_offset, part['pos'][1] + shadow_offset), part['size'])  # Shadow
+                    pygame.draw.circle(self.screen, part['color'], part['pos'], part['size'])  # Eye
+                elif part['type'] in ['body', 'arm_left', 'arm_right', 'leg_left', 'leg_right']:
+                    pygame.draw.line(self.screen, part['color'], part['start'], part['end'], part['width'])  # Line for body parts
+                elif part['type'] == 'mouth':
+                    pygame.draw.line(self.screen, part['color'], part['start'], part['end'], part['width'])  # Mouth
 
-        if count > 3:
-            pygame.draw.line(self.screen, self.REDDISH, (150, 230), (150, 380), 10)
-        if count > 4:
-            pygame.draw.line(self.screen, self.REDDISH, (150, 270), (230, 230), 10)
-        if count > 5:
-            pygame.draw.line(self.screen, self.REDDISH, (150, 270), (70, 230), 10)
-        if count > 6:
-            pygame.draw.line(self.screen, self.REDDISH, (150, 380), (190, 450), 10)
-        if count > 7:
-            pygame.draw.line(self.screen, self.REDDISH, (150, 380), (110, 450), 10)
-        if count >= 8:
-            pygame.draw.line(self.screen, self.REDDISH, (120, 160), (140, 180), 4)
-            pygame.draw.line(self.screen, self.REDDISH, (120, 180), (140, 160), 4)
-            pygame.draw.line(self.screen, self.REDDISH, (160, 160), (180, 180), 4)
-            pygame.draw.line(self.screen, self.REDDISH, (160, 180), (180, 160), 4)
-            pygame.draw.line(self.screen, self.REDDISH, (130, 200), (170, 200), 4)
-            pygame.draw.arc(self.screen, self.REDDISH, (128, 230, 40, 10), 0, 2 * math.pi, 10)
 
     #draw gallows
     def draw_gallows(self):
-        pygame.draw.line(self.screen, REDDISH, (50, 500), (50, 120), 10)
+        pygame.draw.line(self.screen, REDDISH, (50, 410), (50, 120), 10)
         pygame.draw.line(self.screen, REDDISH, (50, 120), (160, 100), 10)
         pygame.draw.line(self.screen, REDDISH, (155, 100), (155, 140), 10)
 
@@ -176,8 +179,9 @@ class HangmanGame:
         self.screen.fill((204, 153, 255))
         
         # Draw title
-        title = self.TITLE.render("Hangman", True, self.BLACK)
-        title_rect = title.get_rect(center=(self.WIDTH // 2, 10 + title.get_height() // 2))
+        title_text = "Hangman"
+        title = self.TITLE.render(title_text, True, self.BLACK)
+        title_rect = title.get_rect(center=(self.WIDTH // 2, 100))  # Positioned with a margin from the top
         self.screen.blit(title, title_rect)
 
         # Draw guessed word
@@ -244,13 +248,16 @@ class HangmanGame:
             self.game_over = True
 
     def handle_mouse_click(self, event):
-        x_mouse, y_mouse = pygame.mouse.get_pos()
-        
+        # Early return if the game is over
         if self.game_over:
+            x_mouse, y_mouse = pygame.mouse.get_pos()
+
             # Check if the continue button is clicked
-            if self.continue_button_rect.collidepoint(x_mouse, y_mouse):
+            if (self.continue_button_rect.collidepoint(x_mouse, y_mouse)):
                 self.reset_game()
-                return
+            return
+        
+        x_mouse, y_mouse = pygame.mouse.get_pos()
 
         # Check if a letter button is clicked
         for letter in self.letters:
@@ -264,8 +271,13 @@ class HangmanGame:
                         self.incorrect += 1
                     return
 
+
     #Handle keyboard click
     def handle_key_press(self, event):
+        # Early return if the game is over
+        if self.game_over:
+            return
+        
         if event.key == pygame.K_ESCAPE:
             pygame.quit()
             sys.exit()
@@ -286,6 +298,7 @@ class HangmanGame:
                 # Update incorrect count if necessary
                 if letter not in self.word:
                     self.incorrect += 1
+
 
 if __name__ == "__main__":
     game = HangmanGame()
